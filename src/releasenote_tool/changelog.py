@@ -40,11 +40,13 @@ class Commit:
             section = "breaking"
         else:
             section = type_ if type_ in ("feat", "fix") else "other"
-        return cls(section, match["scope"], match["description"], sha[:7])
+        return cls(section, match["scope"], match["description"], sha)
 
-    def __str__(self) -> str:
+    def bullet(self, url: str | None) -> str:
         scope = f"**{self.scope}:** " if self.scope else ""
-        return f"* {scope}{self.description} ({self.sha})"
+        short = self.sha[:7]
+        commit = f"[{short}]({url}/commit/{self.sha})" if url else short
+        return f"* {scope}{self.description} ({commit})"
 
 
 def _git(repo: str, *args: str) -> str:
@@ -66,10 +68,10 @@ def commits_in_range(repo: str, start: str | None, end: str) -> list[Commit]:
     return [commit for commit in parsed if commit]
 
 
-def render(commits: list[Commit], version: str, date: str) -> str:
+def render(commits: list[Commit], version: str, date: str, url: str | None = None) -> str:
     blocks = [f"## {version} ({date})"]
     for section, heading in SECTIONS.items():
-        lines = [str(commit) for commit in commits if commit.section == section]
+        lines = [commit.bullet(url) for commit in commits if commit.section == section]
         if lines:
             blocks += [f"### {heading}", "\n".join(lines)]
     if len(blocks) == 1:
@@ -86,3 +88,13 @@ def previous_tag(repo: str, to: str) -> str | None:
 
 def date_of(repo: str, to: str) -> str:
     return _git(repo, "log", "-1", "--format=%cs", to).strip()
+
+
+def origin_url(repo: str) -> str | None:
+    """Browsable URL of the origin remote, for linking commits."""
+    try:
+        url = _git(repo, "remote", "get-url", "origin").strip()
+    except subprocess.CalledProcessError:
+        return None
+    url = re.sub(r"^(?:ssh://)?git@([^:/]+)[:/]", r"https://\1/", url)
+    return url.removesuffix(".git") or None

@@ -2,7 +2,7 @@ import pathlib
 
 import click
 
-from .changelog import commits_in_range, date_of, previous_tag, render
+from .changelog import commits_in_range, date_of, origin_url, previous_tag, render
 
 
 @click.group()
@@ -17,10 +17,13 @@ def main() -> None:
 )
 @click.option("--to", "end", default="HEAD", help="End of the range, inclusive.")
 @click.option("--out", type=click.Path(path_type=pathlib.Path), help="Write <out>/changelog.md.")
-def changelog(repo: str, start: str | None, end: str, out: pathlib.Path | None) -> None:
+@click.option("--url", help="Repository URL commits link to. Defaults to the origin remote.")
+def changelog(
+    repo: str, start: str | None, end: str, out: pathlib.Path | None, url: str | None
+) -> None:
     """Technical changelog from the conventional commits in a tag range."""
     commits = commits_in_range(repo, start or previous_tag(repo, end), end)
-    markdown = render(commits, end, date_of(repo, end))
+    markdown = render(commits, end, date_of(repo, end), url or origin_url(repo))
     if out is None:
         click.echo(markdown, nl=False)
         return
