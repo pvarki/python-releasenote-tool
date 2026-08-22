@@ -68,15 +68,17 @@ def commits_in_range(repo: str, start: str | None, end: str) -> list[Commit]:
     return [commit for commit in parsed if commit]
 
 
-def render(commits: list[Commit], version: str, date: str, url: str | None = None) -> str:
-    blocks = [f"## {version} ({date})"]
+def sections(commits: list[Commit], url: str | None = None) -> str:
+    blocks = []
     for section, heading in SECTIONS.items():
         lines = [commit.bullet(url) for commit in commits if commit.section == section]
         if lines:
             blocks += [f"### {heading}", "\n".join(lines)]
-    if len(blocks) == 1:
-        blocks.append("_No notable changes._")
-    return "\n\n".join(blocks) + "\n"
+    return "\n\n".join(blocks or ["_No notable changes._"]) + "\n"
+
+
+def render(commits: list[Commit], version: str, date: str, url: str | None = None) -> str:
+    return f"## {version} ({date})\n\n{sections(commits, url)}"
 
 
 def previous_tag(repo: str, to: str) -> str | None:
@@ -88,6 +90,10 @@ def previous_tag(repo: str, to: str) -> str | None:
 
 def date_of(repo: str, to: str) -> str:
     return _git(repo, "log", "-1", "--format=%cs", to).strip()
+
+
+def timestamp_of(repo: str, to: str) -> str:
+    return _git(repo, "log", "-1", "--format=%cI", to).strip()
 
 
 def origin_url(repo: str) -> str | None:
