@@ -16,6 +16,18 @@ releasenote changelog --repo ../other-repo --to v1.1.0
 
 Each entry links to its commit on the origin remote; override the base with `--url`.
 
+`build` adds the user-facing release notes on top of that changelog:
+
+```sh
+releasenote build --from v1.0.0 --to v1.1.0  # release body to stdout
+releasenote build --to v1.1.0 --out dist     # changelog.md, release-notes.md, release-body.md
+```
+
+The notes come from the `## User-Facing Summary` section of every pull request merged in the
+range; the rest of the body, the release goal included, is left out. A range where no pull
+request filled that section gets the changelog alone. Needs `gh` on PATH and authenticated
+(`GH_TOKEN: ${{ github.token }}` in Actions).
+
 `feat` goes under Features, `fix` under Fixes, anything else under Other changes, and a `!` or a
 `BREAKING CHANGE:` footer under Breaking changes. Merge commits and commits that are not
 conventional commits are left out.
