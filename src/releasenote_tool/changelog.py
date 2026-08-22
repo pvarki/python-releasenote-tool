@@ -52,13 +52,13 @@ def _git(repo: str, *args: str) -> str:
     ).stdout
 
 
-def commits_in_range(repo: str, frm: str | None, to: str) -> list[Commit]:
+def commits_in_range(repo: str, start: str | None, end: str) -> list[Commit]:
     log = _git(
         repo,
         "log",
         "--no-merges",
         f"--format={FIELD.join(('%H', '%s', '%b'))}{RECORD}",
-        f"{frm}..{to}" if frm else to,
+        f"{start}..{end}" if start else end,
     )
     records = (record.strip("\n").split(FIELD) for record in log.split(RECORD) if record.strip())
     parsed = (Commit.parse(*record) for record in records)
