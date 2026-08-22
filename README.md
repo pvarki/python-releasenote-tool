@@ -14,6 +14,8 @@ releasenote changelog --to v1.1.0 --out dist       # writes dist/changelog.md
 releasenote changelog --repo ../other-repo --to v1.1.0
 ```
 
+Each entry links to its commit on the origin remote; override the base with `--url`.
+
 `feat` goes under Features, `fix` under Fixes, anything else under Other changes, and a `!` or a
 `BREAKING CHANGE:` footer under Breaking changes. Merge commits and commits that are not
 conventional commits are left out.
