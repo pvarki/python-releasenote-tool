@@ -1,0 +1,28 @@
+name: Code Quality + Standards
+on: [pull_request]
+
+jobs:
+  prek:
+    runs-on: ubuntu-latest
+    name: Run Pre-Commit Checks using Prek
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pvarki/config-ci-library/.github/actions/setup-python@main
+      # The mypy hook runs as a system command, so it needs the venv on PATH
+      - run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - uses: j178/prek-action@v2
+
+  bumpversion-check:
+    runs-on: ubuntu-latest
+    name: Validate .bumpversion.toml
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pvarki/config-ci-library/.github/actions/validate-bumpversion@main
+
+  tests:
+    runs-on: ubuntu-latest
+    name: Run tests
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pvarki/config-ci-library/.github/actions/setup-python@main
+      - run: uv run pytest
