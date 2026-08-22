@@ -9,7 +9,7 @@ dependencies = ["click>=8.1"]
 releasenote = "releasenote_tool.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "mypy>=1.11"]
 
 [build-system]
 requires = ["hatchling"]
@@ -20,3 +20,6 @@ packages = ["src/releasenote_tool"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100

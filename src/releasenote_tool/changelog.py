@@ -1,13 +1,14 @@
 """Technical changelog from conventional commits in a git tag range."""
 
 import re
-import subprocess
+import subprocess  # nosec B404
 from dataclasses import dataclass
 
 SUBJECT_RE = re.compile(
-    r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?: (?P<description>.+)$", re.I
+    r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?: (?P<description>.+)$",
+    re.IGNORECASE,
 )
-BREAKING_FOOTER_RE = re.compile(r"^BREAKING[ -]CHANGE:", re.M)
+BREAKING_FOOTER_RE = re.compile(r"^BREAKING[ -]CHANGE:", re.MULTILINE)
 
 SECTIONS = {
     "breaking": "Breaking changes",
@@ -47,7 +48,7 @@ class Commit:
 
 
 def _git(repo: str, *args: str) -> str:
-    return subprocess.run(
+    return subprocess.run(  # nosec
         ["git", "-C", repo, *args], capture_output=True, text=True, check=True
     ).stdout
 
