@@ -37,4 +37,10 @@ conventional commits are left out.
 ```sh
 uv sync --extra dev
 uv run pytest
+uv run pytest --force-regen   # after an intentional change to the rendered output
 ```
+
+`tests/data/pulls` holds pull request bodies covering what the template produces, and
+`tests/data/expected` the markdown they render to. Those are checked with
+[pytest-regressions](https://pytest-regressions.readthedocs.io); `--force-regen` rewrites them,
+so read the diff before committing it.

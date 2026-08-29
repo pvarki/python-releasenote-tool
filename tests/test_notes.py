@@ -61,7 +61,7 @@ def pull_request(body, number=118, title="fix: keep the otters together"):
         "body": body,
         "number": number,
         "title": title,
-        "url": f"https://github.com/example/widget/pull/{number}",
+        "url": f"https://example.com/example/test/pull/{number}",
     }
 
 
@@ -69,7 +69,7 @@ def test_a_change_is_headed_by_its_own_title_and_links_the_pull_request():
     (change,) = changes(pull_request(ONE))
     assert change.markdown() == (
         "### Wombats leave tidy droppings "
-        "([#118](https://github.com/example/widget/pull/118))\n\n"
+        "([#118](https://example.com/example/test/pull/118))\n\n"
         "Wombat droppings come out cube shaped, so they stay put on a rock instead of rolling off."
     )
 
@@ -126,7 +126,7 @@ def test_an_unterminated_block_stops_at_the_next_section():
 
 
 def test_slug():
-    assert slug("https://github.com/example/widget") == "example/widget"
+    assert slug("https://example.com/example/test") == "example/test"
 
 
 def test_the_window_starts_after_the_previous_tag():

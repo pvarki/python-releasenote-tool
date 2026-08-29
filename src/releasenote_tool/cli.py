@@ -6,6 +6,7 @@ import click
 
 from . import notes
 from .changelog import (
+    Commit,
     commits_in_range,
     date_of,
     origin_url,
@@ -30,6 +31,28 @@ def range_options(command: Callable[..., Any]) -> Callable[..., Any]:
     for option in reversed(RANGE_OPTIONS):
         command = option(command)
     return command
+
+
+def documents(
+    commits: list[Commit],
+    changes: list[notes.Change],
+    version: str,
+    date: str,
+    url: str | None,
+) -> dict[str, str]:
+    """The markdown files a build produces, by filename.
+
+    A range whose pull requests carry no user-facing changes gets the changelog alone.
+    """
+    files = {"changelog.md": render(commits, version, date, url)}
+    if changes:
+        files["release-notes.md"] = notes.render(changes, version, date)
+        files["release-body.md"] = (
+            f"{files['release-notes.md']}\n## Changelog\n\n{sections(commits, url)}"
+        )
+    else:
+        files["release-body.md"] = files["changelog.md"]
+    return files
 
 
 @click.group()
@@ -68,15 +91,7 @@ def build(
     pulls = notes.pull_requests(notes.slug(url), since, timestamp_of(repo, end))
     changes = [change for pull in pulls for change in notes.changes(pull)]
 
-    files = {"changelog.md": render(commits, end, date, url)}
-    if changes:
-        files["release-notes.md"] = notes.render(changes, end, date)
-        files["release-body.md"] = (
-            f"{files['release-notes.md']}\n## Changelog\n\n{sections(commits, url)}"
-        )
-    else:
-        files["release-body.md"] = files["changelog.md"]
-
+    files = documents(commits, changes, end, date, url)
     if out is None:
         click.echo(files["release-body.md"], nl=False)
         return
