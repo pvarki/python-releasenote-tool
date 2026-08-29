@@ -46,7 +46,7 @@ class Commit:
         scope = f"**{self.scope}:** " if self.scope else ""
         short = self.sha[:7]
         commit = f"[{short}]({url}/commit/{self.sha})" if url else short
-        return f"* {scope}{self.description} ({commit})"
+        return f"- {scope}{self.description} ({commit})"
 
 
 def _git(repo: str, *args: str) -> str:
