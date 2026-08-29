@@ -3,30 +3,71 @@
 import json
 import re
 import subprocess  # nosec B404
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
 import click
 
-HEADING_RE = re.compile(r"^#{1,4}\s*User[- ]Facing.*$", re.IGNORECASE | re.MULTILINE)
-NEXT_HEADING_RE = re.compile(r"^#{1,2}\s", re.MULTILINE)
+# The user-facing section of the pull request template, one ### per change:
+#
+#     <!-- releasenote:start -->
+#     ### Short title of the change
+#     A few sentences describing the change to a user.
+#     <!-- releasenote:end -->
+#
+# A block left unterminated ends at the next ## heading instead of swallowing the rest of the body.
+BLOCK_RE = re.compile(
+    r"<!--\s*releasenote:start\s*-->(?P<block>.*?)(?=<!--\s*releasenote:end\s*-->|^## |\Z)",
+    re.DOTALL | re.MULTILINE,
+)
+COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+ENTRY_RE = re.compile(r"^### +(?P<title>.+?)\s*$", re.MULTILINE)
+PLACEHOLDER = frozenset(
+    {"short title of the change", "a few sentences describing the change to a user."}
+)
 
 
-def user_facing(body: str) -> str | None:
-    """The User-Facing Summary section of a pull request body, or None if it was left out."""
-    heading = HEADING_RE.search(body)
-    if not heading:
-        return None
-    return NEXT_HEADING_RE.split(body[heading.end() :], maxsplit=1)[0].strip() or None
+@dataclass(frozen=True)
+class Change:
+    """One user-facing change: one ### in the release notes, later one slide."""
+
+    title: str
+    body: str
+    number: int
+    url: str
+
+    def markdown(self) -> str:
+        heading = f"### {self.title} ([#{self.number}]({self.url}))"
+        return f"{heading}\n\n{self.body}" if self.body else heading
 
 
-def block(pull_request: dict[str, Any]) -> str | None:
-    """One release note block, under a heading naming the pull request it came from."""
-    text = user_facing(pull_request["body"] or "")
-    if not text:
-        return None
+def filled(title: str, body: str) -> bool:
+    """False for an entry left as the placeholder the pull request template ships with."""
+    return title.strip().lower() not in PLACEHOLDER and body.strip().lower() not in PLACEHOLDER
+
+
+def entries(body: str) -> list[tuple[str, str]]:
+    """Title and body of every ### inside the release note markers of a pull request body.
+
+    Text above the first ### is dropped; only headed entries are published.
+    """
+    found = []
+    for marked in BLOCK_RE.finditer(body):
+        block = COMMENT_RE.sub("", marked["block"])
+        headings = list(ENTRY_RE.finditer(block))
+        ends = [heading.start() for heading in headings[1:]] + [len(block)]
+        for heading, end in zip(headings, ends):
+            text = block[heading.end() : end].strip()
+            if filled(heading["title"], text):
+                found.append((heading["title"].strip(), text))
+    return found
+
+
+def changes(pull_request: dict[str, Any]) -> list[Change]:
+    """Every user-facing change a pull request contributes, in the order it lists them."""
     number, url = pull_request["number"], pull_request["url"]
-    return f"### {pull_request['title']} ([#{number}]({url}))\n\n{text}"
+    return [Change(title, body, number, url) for title, body in entries(pull_request["body"] or "")]
 
 
 def slug(url: str) -> str:
@@ -66,5 +107,6 @@ def pull_requests(repo: str, since: str | None, until: str) -> list[dict[str, An
     )
 
 
-def render(blocks: list[str], version: str, date: str) -> str:
+def render(changes: list[Change], version: str, date: str) -> str:
+    blocks = [change.markdown() for change in changes]
     return f"## {version} ({date})\n\n" + "\n\n".join(blocks) + "\n"
