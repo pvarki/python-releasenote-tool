@@ -66,11 +66,11 @@ def build(
     commits = commits_in_range(repo, start, end)
     since = timestamp_of(repo, start) if start else None
     pulls = notes.pull_requests(notes.slug(url), since, timestamp_of(repo, end))
-    blocks = [block for block in map(notes.block, pulls) if block]
+    changes = [change for pull in pulls for change in notes.changes(pull)]
 
     files = {"changelog.md": render(commits, end, date, url)}
-    if blocks:
-        files["release-notes.md"] = notes.render(blocks, end, date)
+    if changes:
+        files["release-notes.md"] = notes.render(changes, end, date)
         files["release-body.md"] = (
             f"{files['release-notes.md']}\n## Changelog\n\n{sections(commits, url)}"
         )
