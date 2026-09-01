@@ -1,0 +1,22 @@
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Publish Docker image
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Publish Docker image
+        uses: pvarki/config-ci-library/.github/actions/publish-image@main
+        with:
+          product: releasenote
+          component: tool
+          platforms: linux/amd64
+          github-token: ${{ secrets.GITHUB_TOKEN }}

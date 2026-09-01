@@ -1,0 +1,59 @@
+on:
+  pull_request:
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    name: Pre-commit
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pvarki/config-ci-library/.github/actions/setup-python@main
+        with:
+          python-version: "3.11"
+      - name: Do pre-commit checks (ruff, mypy, bandit)
+        run: |
+          uv run prek run --all-files
+
+  bumpversion-check:
+    runs-on: ubuntu-latest
+    name: Validate .bumpversion.toml
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pvarki/config-ci-library/.github/actions/validate-bumpversion@main
+
+  tests:
+    runs-on: ubuntu-latest
+    name: Run tests
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pvarki/config-ci-library/.github/actions/setup-python@main
+        with:
+          python-version: "3.11"
+      - name: Test with pytest
+        run: |
+          uv run pytest
+
+  test-image:
+    name: Run image smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run image smoke test
+        run: sh tests/test_image.sh
+
+  publish:
+    runs-on: ubuntu-latest
+    name: Publish Docker image
+    needs: [pre-commit, bumpversion-check, tests, test-image]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Publish Docker image
+        uses: pvarki/config-ci-library/.github/actions/publish-image@main
+        with:
+          product: releasenote
+          component: tool
+          platforms: linux/amd64
+          github-token: ${{ secrets.GITHUB_TOKEN }}
