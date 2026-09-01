@@ -17,8 +17,7 @@ _footer: "[#131](https://example.com/example/test/pull/131)"
 
 ### Colony size estimated from one photo
 
-An emperor penguin colony huddles tightly enough that counting heads is hopeless, so a photo of
-one gives you an estimate of its size instead.
+An emperor penguin colony huddles tightly enough that counting heads is hopeless, so a photo of one gives you an estimate of its size instead.
 
 ---
 
@@ -28,8 +27,7 @@ _footer: "[#129](https://example.com/example/test/pull/129)"
 
 ### Migration routes on the map
 
-Arctic terns fly from pole to pole every year, the longest migration of any animal, and the map
-draws that whole route as one line now.
+Arctic terns fly from pole to pole every year, the longest migration of any animal, and the map draws that whole route as one line now.
 
 ---
 
@@ -39,8 +37,7 @@ _footer: "[#127](https://example.com/example/test/pull/127)"
 
 ### Night mode for field work
 
-Tarsiers have eyes as large as their brains because they hunt in the dark. The field view dims
-the same way, so nobody out at night is blinded by their own screen.
+Tarsiers have eyes as large as their brains because they hunt in the dark. The field view dims the same way, so nobody out at night is blinded by their own screen.
 
 ---
 
@@ -68,8 +65,7 @@ _footer: "[#124](https://example.com/example/test/pull/124)"
 
 ### Plumage colour on the sighting card
 
-Flamingos are born grey and take their pink from the brine shrimp they eat, so the card shows
-where a bird sits on that scale instead of one flat colour for the whole species.
+Flamingos are born grey and take their pink from the brine shrimp they eat, so the card shows where a bird sits on that scale instead of one flat colour for the whole species.
 
 ![The sighting card showing the plumage scale](https://example.com/attachments/plumage-scale.png)
 
@@ -81,8 +77,7 @@ _footer: "[#123](https://example.com/example/test/pull/123)"
 
 ### Tusk measurements on the sighting form
 
-A narwhal tusk is really a tooth grown out through the animal's lip, so the form records it
-apart from body length:
+A narwhal tusk is really a tooth grown out through the animal's lip, so the form records it apart from body length:
 
 - length in centimetres, spiral direction optional
 - left tusk, right tusk, or both for the rare double
@@ -96,8 +91,7 @@ _footer: "[#121](https://example.com/example/test/pull/121)"
 
 ### Scat photos are classified for you
 
-Wombat droppings come out cube shaped, which is why the classifier can pick them out of a photo
-without you tagging the species first.
+Wombat droppings come out cube shaped, which is why the classifier can pick them out of a photo without you tagging the species first.
 
 ---
 
@@ -155,5 +149,4 @@ _footer: "[#118](https://example.com/example/test/pull/118)"
 
 ### Otter pairs stay linked overnight
 
-Sea otters hold hands while they sleep so they do not drift apart, and the map keeps a resting
-pair on one marker instead of splitting them the moment one of them surfaces.
+Sea otters hold hands while they sleep so they do not drift apart, and the map keeps a resting pair on one marker instead of splitting them the moment one of them surfaces.
