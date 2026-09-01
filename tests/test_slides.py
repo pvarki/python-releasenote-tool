@@ -66,6 +66,34 @@ def test_a_heading_underline_is_left_alone():
     assert "Overnight\n---\nOtters hold hands." in markdown
 
 
+def test_soft_wrapped_prose_becomes_one_line():
+    body = "Sea otters hold hands while they sleep\nso they do not drift apart."
+    markdown = slides.render([change(body)], VERSION, DATE, REPO)
+    assert "sleep so they" in markdown
+
+
+def test_a_wrapped_bullet_keeps_its_marker_and_gains_the_rest():
+    assert slides.unwrap("- length in centimetres,\n  spiral direction optional") == (
+        "- length in centimetres, spiral direction optional"
+    )
+
+
+def test_what_owns_its_own_line_keeps_it():
+    body = "#### On the web\nThe sidebar stays open.\n\n![A card](https://example.com/card.png)"
+    assert slides.unwrap(body) == body
+
+
+def test_a_line_break_someone_asked_for_survives():
+    assert slides.unwrap("Otters hold hands  \nPups float alone") == (
+        "Otters hold hands  \nPups float alone"
+    )
+
+
+def test_fenced_code_is_left_as_written():
+    body = "Run it with:\n\n```sh\nreleasenote build --to v1.2.0\n--out dist\n```"
+    assert slides.unwrap(body) == body
+
+
 def test_a_long_change_is_marked_dense():
     body = "\n".join(f"- sighting {number}" for number in range(slides.DENSE_LINES + 1))
     assert "_class: dense" in slides.render([change(body)], VERSION, DATE, REPO)

@@ -4,7 +4,7 @@ from typing import Any
 
 import click
 
-from . import notes, slides
+from . import export, notes, slides
 from .changelog import (
     Commit,
     commits_in_range,
@@ -78,10 +78,24 @@ def changelog(
 
 @main.command()
 @range_options
+@click.option(
+    "--slides",
+    "formats",
+    type=click.Choice(export.FORMATS),
+    multiple=True,
+    help="Also render the deck in this format. Repeatable, needs --out.",
+)
 def build(
-    repo: str, start: str | None, end: str, out: pathlib.Path | None, url: str | None
+    repo: str,
+    start: str | None,
+    end: str,
+    out: pathlib.Path | None,
+    url: str | None,
+    formats: tuple[str, ...],
 ) -> None:
     """Release notes from the pull requests in a tag range, with the changelog below."""
+    if formats and out is None:
+        raise click.ClickException("--slides has nowhere to write, pass --out.")
     start = start or previous_tag(repo, end)
     url = url or origin_url(repo)
     if not url:
@@ -99,3 +113,33 @@ def build(
     out.mkdir(parents=True, exist_ok=True)
     for name, markdown in files.items():
         (out / name).write_text(markdown)
+
+    deck = out / "slides.md"
+    if formats and not deck.exists():
+        click.echo("No user-facing changes in the range, no slides to render.", err=True)
+        return
+    for fmt in formats:
+        export.run(deck, export.target(deck, fmt))
+
+
+@main.command("slides")
+@click.argument("deck", type=click.Path(exists=True, dir_okay=False, path_type=pathlib.Path))
+@click.option(
+    "--format",
+    "formats",
+    type=click.Choice(export.FORMATS),
+    multiple=True,
+    default=("pdf",),
+    help="Format to render. Repeatable.",
+)
+@click.option(
+    "--out",
+    type=click.Path(path_type=pathlib.Path),
+    help="Directory to write into. Defaults to the deck's own.",
+)
+def slides_command(deck: pathlib.Path, formats: tuple[str, ...], out: pathlib.Path | None) -> None:
+    """Render an existing slides.md, without going near git or GitHub."""
+    if out:
+        out.mkdir(parents=True, exist_ok=True)
+    for fmt in formats:
+        export.run(deck, export.target(deck, fmt, out))
