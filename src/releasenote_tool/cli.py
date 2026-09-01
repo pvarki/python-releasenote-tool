@@ -4,7 +4,7 @@ from typing import Any
 
 import click
 
-from . import notes
+from . import notes, slides
 from .changelog import (
     Commit,
     commits_in_range,
@@ -50,6 +50,7 @@ def documents(
         files["release-body.md"] = (
             f"{files['release-notes.md']}\n## Changelog\n\n{sections(commits, url)}"
         )
+        files["slides.md"] = slides.render(changes, version, date, url)
     else:
         files["release-body.md"] = files["changelog.md"]
     return files
