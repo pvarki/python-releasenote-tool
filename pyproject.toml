@@ -9,7 +9,7 @@ dependencies = ["click>=8.1"]
 releasenote = "releasenote_tool.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "mypy>=1.11", "pytest-regressions>=2.5"]
+dev = ["pytest>=8.0", "mypy>=1.11", "pytest-regressions>=2.5", "prek>=0.4"]
 
 [build-system]
 requires = ["hatchling"]
