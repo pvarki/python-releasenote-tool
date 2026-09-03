@@ -30,7 +30,7 @@ pull request filled that block gets the changelog alone. Needs `gh` on PATH and 
 `refactor`, `revert`, `style` and `test` under Other changes; a `!` or a `BREAKING CHANGE:` footer
 puts an entry under Breaking changes instead. Merge commits, a commit whose type is outside that
 set — a typo, usually — and anything not shaped like a conventional commit are left out entirely,
-description and body both.
+subject line and body both.
 
 ## Slides
 
