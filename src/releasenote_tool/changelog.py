@@ -5,7 +5,7 @@ import subprocess  # nosec B404
 from dataclasses import dataclass
 
 SUBJECT_RE = re.compile(
-    r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?: (?P<description>.+)$",
+    r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?: (?P<summary>.+)$",
     re.IGNORECASE,
 )
 BREAKING_FOOTER_RE = re.compile(r"^BREAKING[ -]CHANGE:", re.MULTILINE)
@@ -30,7 +30,7 @@ class Commit:
 
     section: str
     scope: str | None
-    description: str
+    summary: str
     sha: str
 
     @classmethod
@@ -46,13 +46,13 @@ class Commit:
             section = "breaking"
         else:
             section = type_ if type_ in ("feat", "fix") else "other"
-        return cls(section, match["scope"], match["description"], sha)
+        return cls(section, match["scope"], match["summary"], sha)
 
     def bullet(self, url: str | None) -> str:
         scope = f"**{self.scope}:** " if self.scope else ""
         short = self.sha[:7]
         commit = f"[{short}]({url}/commit/{self.sha})" if url else short
-        return f"- {scope}{self.description} ({commit})"
+        return f"- {scope}{self.summary} ({commit})"
 
 
 def _git(repo: str, *args: str) -> str:

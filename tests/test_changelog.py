@@ -12,6 +12,12 @@ LOG = [
     ("9999999999", "wip", ""),
 ]
 
+COMMIT_BODY = (
+    "Sea otters hold hands while they sleep so they do not drift apart.\n\n"
+    "The map split a resting pair the moment one of them surfaced.\n\n"
+    "Refs: #118\n"
+)
+
 
 def test_render_groups_and_drops_non_conventional():
     commits = [c for c in (Commit.parse(*entry) for entry in LOG) if c]
@@ -63,6 +69,25 @@ def test_every_conventional_type_parses(type_):
     assert commit is not None
     assert commit.section == (type_ if type_ in ("feat", "fix") else "other")
     assert commit.section in SECTIONS
+
+
+@pytest.mark.parametrize(
+    "summary",
+    [
+        "keep a resting pair on one marker",
+        "handle a: b",
+        "draw `routes` as one line",
+        "keep the (last) sighting",
+        "Restore the empty state",
+        "bump pytest to 9.1",
+    ],
+)
+def test_a_commit_summary_comes_from_the_subject_line_not_the_commit_body(summary):
+    commit = Commit.parse("aaaaaaaaaa", f"fix(map): {summary}", COMMIT_BODY)
+    assert commit is not None
+    assert commit.summary == summary
+    for line in filter(None, COMMIT_BODY.splitlines()):
+        assert line not in commit.bullet(None)
 
 
 @pytest.mark.parametrize(
