@@ -26,9 +26,11 @@ range, one entry per `###` heading inside it; the rest of the body is left out. 
 pull request filled that block gets the changelog alone. Needs `gh` on PATH and authenticated
 (`GH_TOKEN: ${{ github.token }}` in Actions).
 
-`feat` goes under Features, `fix` under Fixes, anything else under Other changes, and a `!` or a
-`BREAKING CHANGE:` footer under Breaking changes. Merge commits and commits that are not
-conventional commits are left out.
+`feat` goes under Features, `fix` under Fixes, and `build`, `chore`, `ci`, `docs`, `perf`,
+`refactor`, `revert`, `style` and `test` under Other changes; a `!` or a `BREAKING CHANGE:` footer
+puts an entry under Breaking changes instead. Merge commits, a commit whose type is outside that
+set — a typo, usually — and anything not shaped like a conventional commit are left out entirely,
+description and body both.
 
 ## Slides
 

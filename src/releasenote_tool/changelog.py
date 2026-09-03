@@ -10,6 +10,10 @@ SUBJECT_RE = re.compile(
 )
 BREAKING_FOOTER_RE = re.compile(r"^BREAKING[ -]CHANGE:", re.MULTILINE)
 
+TYPES = frozenset(
+    {"build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"}
+)
+
 SECTIONS = {
     "breaking": "Breaking changes",
     "feat": "Features",
@@ -31,11 +35,13 @@ class Commit:
 
     @classmethod
     def parse(cls, sha: str, subject: str, body: str) -> "Commit | None":
-        """None for anything that is not a conventional commit."""
+        """None for anything that is not a conventional commit, a typo'd type included."""
         match = SUBJECT_RE.match(subject)
         if not match:
             return None
         type_ = match["type"].lower()
+        if type_ not in TYPES:
+            return None
         if match["breaking"] or BREAKING_FOOTER_RE.search(body):
             section = "breaking"
         else:
