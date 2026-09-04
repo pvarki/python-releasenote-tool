@@ -18,5 +18,4 @@ jobs:
         with:
           product: releasenote
           component: tool
-          platforms: linux/amd64
           github-token: ${{ secrets.GITHUB_TOKEN }}

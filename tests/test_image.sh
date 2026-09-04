@@ -4,7 +4,7 @@ set -eu
 IMAGE_TAG="local/releasenote-tool-test"
 OUT="$(mktemp -d)"
 
-docker build --platform linux/amd64 --target production -t "${IMAGE_TAG}" .
+docker build --target production -t "${IMAGE_TAG}" .
 
 docker run --rm \
   --user "$(id -u):$(id -g)" \
