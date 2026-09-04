@@ -1,4 +1,4 @@
-"""The changelog command against a real repository: the walk, the tags and the origin remote."""
+"""The commands against a real repository: the walk, the tags, the remote and the files written."""
 
 import os
 import re
@@ -8,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 from conftest import REPO
 
+from releasenote_tool import notes
 from releasenote_tool.changelog import Commit, previous_tag
 from releasenote_tool.cli import main
 
@@ -152,3 +153,40 @@ def test_the_first_release_takes_the_whole_history(repo, changelog):
 
     assert markdown.splitlines()[0] == "## v1.0.0 (2026-08-01)"
     assert linked(markdown) == conventional(walk(repo, "v1.0.0"))
+
+
+@pytest.fixture
+def build(repo, tmp_path, monkeypatch, pulls):
+    """The build command over the fixture repository, with the pull requests stubbed in."""
+
+    def run(*args):
+        monkeypatch.setattr(notes, "pull_requests", lambda *_: pulls)
+        out = tmp_path / "assets"
+        result = CliRunner().invoke(
+            main, ["build", "--repo", str(repo), "--to", "v1.1.0", "--out", str(out), *args]
+        )
+        assert result.exit_code == 0, result.output
+        return {path.name for path in out.iterdir()}
+
+    return run
+
+
+def test_a_build_writes_one_file_per_document_kind(build):
+    assert build() == {
+        "test-1.1.0-changelog.md",
+        "test-1.1.0-release-notes.md",
+        "test-1.1.0-slides.md",
+        "release-body.md",
+    }
+
+
+def test_a_range_without_user_facing_changes_writes_the_changelog_and_the_body(build, monkeypatch):
+    monkeypatch.setattr(notes, "changes", lambda _: [])
+
+    assert build() == {"test-1.1.0-changelog.md", "release-body.md"}
+
+
+def test_the_product_and_release_options_name_the_files(build):
+    written = build("--product", "example-integration", "--release", "v2.0.0")
+
+    assert "example-integration-2.0.0-release-notes.md" in written
