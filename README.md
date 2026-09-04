@@ -82,7 +82,7 @@ docker run --rm \
   --user "$(id -u):$(id -g)" \
   --volume "$PWD:/workspace" \
   --env GH_TOKEN \
-  ghcr.io/pvarki/releasenote-tool:0.1.0 \
+  ghcr.io/pvarki/releasenote-tool:1.0.0 \
   build --to v1.1.0 --out dist --slides pdf --slides pptx
 ```
 
