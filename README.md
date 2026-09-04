@@ -8,7 +8,7 @@ release notes from the pull requests in that range, for use in CI.
 ```sh
 releasenote changelog --to v1.1.0                  # to stdout, --from defaults to the previous tag
 releasenote changelog --from v1.0.0 --to v1.1.0
-releasenote changelog --to v1.1.0 --out dist       # writes dist/changelog.md
+releasenote changelog --to v1.1.0 --out dist       # writes dist/<product>-1.1.0-changelog.md
 releasenote changelog --repo ../other-repo --to v1.1.0
 ```
 
@@ -18,7 +18,7 @@ Each entry links to its commit on the origin remote; override the base with `--u
 
 ```sh
 releasenote build --from v1.0.0 --to v1.1.0  # release body to stdout
-releasenote build --to v1.1.0 --out dist     # changelog.md, release-notes.md, release-body.md, slides.md
+releasenote build --to v1.1.0 --out dist     # see Output files
 ```
 
 The notes come from the `<!-- releasenote:start -->` block of every pull request merged in the
@@ -33,16 +33,46 @@ puts an entry under Breaking changes instead.
 Left out entirely: merge commits, anything not shaped like a conventional commit, a type outside
 that set, and commits that bump the project's own version, which CI makes every pull request carry.
 
+## Output files
+
+Every file leads with the product and the version, so an asset still says what it is once it has
+been downloaded or attached to a release:
+
+```sh
+releasenote build --to v1.1.0 --out dist --product example-integration
+```
+
+```
+dist/
+  example-integration-1.1.0-changelog.md      the technical changelog
+  example-integration-1.1.0-release-notes.md  the user-facing notes
+  example-integration-1.1.0-slides.md         the deck the renders come from
+  release-body.md                             the notes and the changelog in one
+```
+
+`--product` defaults to the name of the origin repository, which is not always what the product is
+called. `--release` gives the version the documents claim when the ref does not carry one, which is
+what a preview built from `--to HEAD` wants. Both work on `changelog` too. A `/` in a ref is
+flattened, so `--to release/1.2` stays one filename.
+
+`release-body.md` keeps a fixed name on purpose: it is the file automation reads, so
+`gh release create --notes-file dist/release-body.md` needs no version in the path. It is also the
+only one a second build into the same directory overwrites rather than sits beside.
+
 ## Slides
 
-`slides.md` is a [Marp](https://marp.app) deck of the same notes: a title slide, then one slide
-per user-facing change, footed with the pull request it came from. `--slides` renders it, one
+The `-slides.md` file is a [Marp](https://marp.app) deck of the same notes: a title slide, then one
+slide per user-facing change, footed with the pull request it came from. `--slides` renders it, one
 flag per format, and needs `--out`:
 
 ```sh
 releasenote build --to v1.1.0 --out dist --slides pdf --slides pptx
-releasenote slides dist/slides.md --format pdf   # render an existing deck, no git or GitHub needed
+releasenote slides dist/example-integration-1.1.0-slides.md --format pdf
 ```
+
+A render from `build` takes the release notes' name, `example-integration-1.1.0-release-notes.pdf`,
+because that is the document someone is handed. `releasenote slides` names its renders after the
+deck you give it instead, since it never sees a product or a version and needs no git or GitHub.
 
 Rendering needs `marp` on PATH, Chromium for the pdf and LibreOffice for the pptx. The container
 image ships all three:
