@@ -3,7 +3,7 @@
 import pytest
 from conftest import REPO
 
-from releasenote_tool import notes
+from releasenote_tool import assets, notes
 from releasenote_tool.changelog import Commit
 from releasenote_tool.cli import documents
 
@@ -38,7 +38,7 @@ def test_release_notes(pulls, file_regression):
 
 def test_release_body(pulls, file_regression):
     files = documents(commits(), changes(pulls), VERSION, DATE, REPO)
-    file_regression.check(files["release-body.md"], basename="release-body", extension=".md")
+    file_regression.check(files["release-body"], basename="release-body", extension=".md")
 
 
 @pytest.mark.parametrize("name", SILENT)
@@ -102,5 +102,10 @@ def test_guidance_comments_never_reach_the_notes(pulls):
 
 def test_a_range_without_user_facing_changes_gets_the_changelog_alone():
     files = documents(commits(), [], VERSION, DATE, REPO)
-    assert "release-notes.md" not in files
-    assert files["release-body.md"] == files["changelog.md"]
+    assert "release-notes" not in files
+    assert files["release-body"] == files["changelog"]
+
+
+def test_every_document_kind_has_a_filename(pulls):
+    files = documents(commits(), changes(pulls), VERSION, DATE, REPO)
+    assert set(files) <= set(assets.names("example-1.0.0"))

@@ -4,7 +4,7 @@ from typing import Any
 
 import click
 
-from . import export, notes, slides
+from . import assets, export, notes, slides
 from .changelog import (
     Commit,
     commits_in_range,
@@ -22,6 +22,10 @@ RANGE_OPTIONS = [
         "--from", "start", help="Start of the range, exclusive. Defaults to the previous tag."
     ),
     click.option("--to", "end", default="HEAD", help="End of the range, inclusive."),
+    click.option(
+        "--product", help="Name the files lead with. Defaults to the origin repository's."
+    ),
+    click.option("--release", help="Version the documents claim. Defaults to --to."),
     click.option("--out", type=click.Path(path_type=pathlib.Path), help="Directory to write into."),
     click.option("--url", help="Repository URL to link to. Defaults to the origin remote."),
 ]
@@ -40,19 +44,19 @@ def documents(
     date: str,
     url: str | None,
 ) -> dict[str, str]:
-    """The markdown files a build produces, by filename.
+    """The markdown files a build produces, by kind.
 
     A range whose pull requests carry no user-facing changes gets the changelog alone.
     """
-    files = {"changelog.md": render(commits, version, date, url)}
+    files = {"changelog": render(commits, version, date, url)}
     if changes:
-        files["release-notes.md"] = notes.render(changes, version, date)
-        files["release-body.md"] = (
-            f"{files['release-notes.md']}\n## Changelog\n\n{sections(commits, url)}"
+        files["release-notes"] = notes.render(changes, version, date)
+        files["release-body"] = (
+            f"{files['release-notes']}\n## Changelog\n\n{sections(commits, url)}"
         )
-        files["slides.md"] = slides.render(changes, version, date, url)
+        files["slides"] = slides.render(changes, version, date, url)
     else:
-        files["release-body.md"] = files["changelog.md"]
+        files["release-body"] = files["changelog"]
     return files
 
 
@@ -64,16 +68,25 @@ def main() -> None:
 @main.command()
 @range_options
 def changelog(
-    repo: str, start: str | None, end: str, out: pathlib.Path | None, url: str | None
+    repo: str,
+    start: str | None,
+    end: str,
+    product: str | None,
+    release: str | None,
+    out: pathlib.Path | None,
+    url: str | None,
 ) -> None:
     """Technical changelog from the conventional commits in a tag range."""
+    url = url or origin_url(repo)
+    label = release or end
     commits = commits_in_range(repo, start or previous_tag(repo, end), end)
-    markdown = render(commits, end, date_of(repo, end), url or origin_url(repo))
+    markdown = render(commits, label, date_of(repo, end), url)
     if out is None:
         click.echo(markdown, nl=False)
         return
     out.mkdir(parents=True, exist_ok=True)
-    (out / "changelog.md").write_text(markdown)
+    stem = f"{assets.project(repo, url, product)}-{assets.version(label)}"
+    (out / assets.names(stem)["changelog"]).write_text(markdown)
 
 
 @main.command()
@@ -89,6 +102,8 @@ def build(
     repo: str,
     start: str | None,
     end: str,
+    product: str | None,
+    release: str | None,
     out: pathlib.Path | None,
     url: str | None,
     formats: tuple[str, ...],
@@ -106,20 +121,23 @@ def build(
     pulls = notes.pull_requests(notes.slug(url), since, timestamp_of(repo, end))
     changes = [change for pull in pulls for change in notes.changes(pull)]
 
-    files = documents(commits, changes, end, date, url)
+    label = release or end
+    files = documents(commits, changes, label, date, url)
     if out is None:
-        click.echo(files["release-body.md"], nl=False)
+        click.echo(files["release-body"], nl=False)
         return
     out.mkdir(parents=True, exist_ok=True)
-    for name, markdown in files.items():
-        (out / name).write_text(markdown)
+    stem = f"{assets.project(repo, url, product)}-{assets.version(label)}"
+    filenames = assets.names(stem)
+    for kind, markdown in files.items():
+        (out / filenames[kind]).write_text(markdown)
 
-    deck = out / "slides.md"
+    deck = out / filenames["slides"]
     if formats and not deck.exists():
         click.echo("No user-facing changes in the range, no slides to render.", err=True)
         return
     for fmt in formats:
-        export.run(deck, export.target(deck, fmt))
+        export.run(deck, out / assets.rendered(stem, fmt))
 
 
 @main.command("slides")
@@ -138,7 +156,7 @@ def build(
     help="Directory to write into. Defaults to the deck's own.",
 )
 def slides_command(deck: pathlib.Path, formats: tuple[str, ...], out: pathlib.Path | None) -> None:
-    """Render an existing slides.md, without going near git or GitHub."""
+    """Render an existing deck, without going near git or GitHub."""
     if out:
         out.mkdir(parents=True, exist_ok=True)
     for fmt in formats:

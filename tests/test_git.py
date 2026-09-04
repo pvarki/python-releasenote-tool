@@ -111,7 +111,8 @@ def changelog(repo, tmp_path):
             main, ["changelog", "--repo", str(repo), "--out", str(out), *args]
         )
         assert result.exit_code == 0, result.output
-        return (out / "changelog.md").read_text()
+        (written,) = out.glob("*-changelog.md")
+        return written.read_text()
 
     return run
 
