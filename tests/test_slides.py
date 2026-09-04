@@ -32,7 +32,7 @@ def test_the_deck_opens_with_marp_front_matter(pulls):
 def test_the_title_slide_names_the_repository_and_the_version(pulls):
     first = deck(slides.render(entries(pulls), VERSION, DATE, REPO))[0]
     assert "# example/test" in first
-    assert f"## {VERSION} — {DATE}" in first
+    assert f"## {VERSION} ({DATE})" in first
 
 
 def test_the_title_slide_falls_back_to_the_version_without_a_repository():
