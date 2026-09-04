@@ -36,6 +36,7 @@ HISTORY = [
     ("fxi(otters): keep a resting pair on one marker", OTTERS),
     ("wip", BEES),
     ("refactor(auth): rework the field tokens", MAYFLY),
+    ("chore: bump version", ""),
 ]
 RELEASED = 3
 TOPIC = ("fix(hives): call out a queenless hive", HIVE)
@@ -130,6 +131,10 @@ def test_a_commit_body_never_reaches_the_changelog(changelog):
 
     for _, body in [*HISTORY, TOPIC]:
         assert not body or body.splitlines()[0] not in markdown
+
+
+def test_the_version_bump_every_pull_request_carries_is_left_out(changelog):
+    assert "bump version" not in changelog("--to", "v1.1.0")
 
 
 def test_a_breaking_footer_in_the_body_lands_under_breaking_changes(repo, changelog):

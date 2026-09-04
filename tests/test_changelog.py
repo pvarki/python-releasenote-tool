@@ -63,6 +63,37 @@ def test_a_type_outside_the_set_is_dropped(subject, body):
     assert Commit.parse("aaaaaaaaaa", subject, body) is None
 
 
+@pytest.mark.parametrize(
+    "subject",
+    [
+        "chore: bump version",
+        "chore: bump version to 0.5.4+260526",
+        "chore: bump version, since this works we make it 1.0.0",
+        "chore: bumpversion",
+        "chore: bump2version minor",
+        "fix: bump version",
+        "feat: bump version to 2.8.1",
+    ],
+)
+def test_a_version_bump_is_dropped_whatever_type_it_was_committed_as(subject):
+    assert Commit.parse("aaaaaaaaaa", subject, "") is None
+
+
+@pytest.mark.parametrize(
+    "subject",
+    [
+        "chore: bump cryptpad-server version",
+        "feat: bump takserver default version to 5.4-19",
+        "chore: fix prettier formatting and bump version to 1.3.1",
+        "chore: bump deps",
+        "fix: bump-my-version install",
+        "chore: migrate to bump-my-version",
+    ],
+)
+def test_bumping_something_other_than_our_own_version_is_kept(subject):
+    assert Commit.parse("aaaaaaaaaa", subject, "") is not None
+
+
 @pytest.mark.parametrize("type_", sorted(TYPES))
 def test_every_conventional_type_parses(type_):
     commit = Commit.parse("aaaaaaaaaa", f"{type_}(scope): describe it", "")
