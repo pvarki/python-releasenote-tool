@@ -2,6 +2,7 @@ FROM node:22-bookworm-slim AS production
 
 ARG MARP_VERSION=4.5.0
 ARG GH_VERSION=2.98.0
+ARG TARGETARCH
 
 # LibreOffice required for pptx to be editable. Without it marp
 # pastes a picture of each slide.
@@ -20,10 +21,10 @@ RUN apt-get update \
         python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
+RUN curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${TARGETARCH}.tar.gz" \
         | tar -xz -C /tmp \
-    && install "/tmp/gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin/gh \
-    && rm -rf "/tmp/gh_${GH_VERSION}_linux_amd64"
+    && install "/tmp/gh_${GH_VERSION}_linux_${TARGETARCH}/bin/gh" /usr/local/bin/gh \
+    && rm -rf "/tmp/gh_${GH_VERSION}_linux_${TARGETARCH}"
 
 RUN npm install -g "@marp-team/marp-cli@${MARP_VERSION}" \
     && npm cache clean --force

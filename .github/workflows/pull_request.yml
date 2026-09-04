@@ -55,5 +55,40 @@ jobs:
         with:
           product: releasenote
           component: tool
-          platforms: linux/amd64
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  release-notes-preview:
+    name: Preview release notes
+    runs-on: ubuntu-latest
+    needs: [publish]
+    permissions:
+      contents: read
+      packages: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build the notes with the image this pull request published
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('.bumpversion.toml','rb'))['tool']['bumpversion']['current_version'])")
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --volume "$PWD:/workspace" \
+            --env GH_TOKEN \
+            "ghcr.io/pvarki/releasenote-tool:${VERSION}-pr${{ github.event.number }}" \
+            build --to HEAD --out release-notes --slides pdf --slides pptx
+      - name: Put the release body on the run summary
+        run: cat release-notes/release-body.md >>"$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-preview
+          path: release-notes
