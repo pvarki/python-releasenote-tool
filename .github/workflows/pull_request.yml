@@ -93,3 +93,4 @@ jobs:
         with:
           name: release-notes-preview
           path: release-notes
+          retention-days: 7
