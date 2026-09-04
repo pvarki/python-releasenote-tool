@@ -7,7 +7,7 @@ paginate: true
 
 # example/test
 
-## v1.2.0 — 2026-08-29
+## v1.2.0 (2026-08-29)
 
 ---
 

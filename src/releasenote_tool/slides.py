@@ -83,7 +83,7 @@ def slide(change: Change) -> str:
 
 def title(version: str, date: str, url: str | None) -> str:
     """The opening slide: the repository over the version it is being released as."""
-    heading = f"# {slug(url)}\n\n## {version} — {date}" if url else f"# {version}\n\n## {date}"
+    heading = f"# {slug(url)}\n\n## {version} ({date})" if url else f"# {version}\n\n## {date}"
     return f"<!-- _class: title -->\n\n{heading}"
 
 
