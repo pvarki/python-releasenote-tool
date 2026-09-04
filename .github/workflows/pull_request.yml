@@ -85,7 +85,8 @@ jobs:
             --volume "$PWD:/workspace" \
             --env GH_TOKEN \
             "ghcr.io/pvarki/releasenote-tool:${VERSION}-pr${{ github.event.number }}" \
-            build --to HEAD --out release-notes --slides pdf --slides pptx
+            build --to HEAD --product releasenote-tool --release "${VERSION}" \
+            --out release-notes --slides pdf --slides pptx
       - name: Put the release body on the run summary
         run: cat release-notes/release-body.md >>"$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
