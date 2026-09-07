@@ -44,7 +44,7 @@ def documents(
     date: str,
     url: str | None,
 ) -> dict[str, str]:
-    """The markdown files a build produces, by kind.
+    """The markdown files one run produces, by kind.
 
     A range whose pull requests carry no user-facing changes gets the changelog alone.
     """
@@ -65,9 +65,9 @@ def main() -> None:
     """Generate changelogs / release notes from a git tag range."""
 
 
-@main.command()
+@main.command("commits")
 @range_options
-def changelog(
+def commits_command(
     repo: str,
     start: str | None,
     end: str,
@@ -89,7 +89,7 @@ def changelog(
     (out / assets.names(stem)["changelog"]).write_text(markdown)
 
 
-@main.command()
+@main.command("changes")
 @range_options
 @click.option(
     "--slides",
@@ -101,7 +101,7 @@ def changelog(
 @click.option(
     "--pr", type=int, help="Also read this pull request, merged or not. For previewing an open one."
 )
-def build(
+def changes_command(
     repo: str,
     start: str | None,
     end: str,

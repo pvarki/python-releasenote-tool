@@ -1,4 +1,4 @@
-"""Names for the files a build writes, so an asset still says what it is once downloaded."""
+"""Names for the files a run writes, so an asset still says what it is once downloaded."""
 
 import pathlib
 import re

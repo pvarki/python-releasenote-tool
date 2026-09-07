@@ -103,13 +103,13 @@ def repo(tmp_path):
 
 
 @pytest.fixture
-def changelog(repo, tmp_path):
-    """The changelog command over the fixture repository, returning what it wrote."""
+def commits(repo, tmp_path):
+    """The commits command over the fixture repository, returning what it wrote."""
 
     def run(*args):
         out = tmp_path / "out"
         result = CliRunner().invoke(
-            main, ["changelog", "--repo", str(repo), "--out", str(out), *args]
+            main, ["commits", "--repo", str(repo), "--out", str(out), *args]
         )
         assert result.exit_code == 0, result.output
         (written,) = out.glob("*-changelog.md")
@@ -118,8 +118,8 @@ def changelog(repo, tmp_path):
     return run
 
 
-def test_the_range_is_the_conventional_commits_since_the_previous_tag(repo, changelog):
-    markdown = changelog("--to", "v1.1.0")
+def test_the_range_is_the_conventional_commits_since_the_previous_tag(repo, commits):
+    markdown = commits("--to", "v1.1.0")
     entries = walk(repo, "v1.0.0..v1.1.0")
 
     assert markdown.splitlines()[0] == "## v1.1.0 (2026-08-01)"
@@ -128,42 +128,42 @@ def test_the_range_is_the_conventional_commits_since_the_previous_tag(repo, chan
     assert git(repo, "rev-parse", "v1.1.0").strip() not in linked(markdown)
 
 
-def test_a_commit_body_never_reaches_the_changelog(changelog):
-    markdown = changelog("--to", "v1.1.0")
+def test_a_commit_body_never_reaches_the_changelog(commits):
+    markdown = commits("--to", "v1.1.0")
 
     for _, body in [*HISTORY, TOPIC]:
         assert not body or body.splitlines()[0] not in markdown
 
 
-def test_the_version_bump_every_pull_request_carries_is_left_out(changelog):
-    assert "bump version" not in changelog("--to", "v1.1.0")
+def test_the_version_bump_every_pull_request_carries_is_left_out(commits):
+    assert "bump version" not in commits("--to", "v1.1.0")
 
 
-def test_a_breaking_footer_in_the_body_lands_under_breaking_changes(repo, changelog):
-    markdown = changelog("--to", "v1.1.0")
+def test_a_breaking_footer_in_the_body_lands_under_breaking_changes(repo, commits):
+    markdown = commits("--to", "v1.1.0")
     sha = git(repo, "log", "-1", "--format=%H", "--grep", "BREAKING CHANGE:").strip()
 
     assert linked(markdown.split("### ")[1]) == {sha}
 
 
-def test_the_first_release_takes_the_whole_history(repo, changelog):
+def test_the_first_release_takes_the_whole_history(repo, commits):
     assert previous_tag(str(repo), "v1.0.0") is None
 
-    markdown = changelog("--to", "v1.0.0")
+    markdown = commits("--to", "v1.0.0")
 
     assert markdown.splitlines()[0] == "## v1.0.0 (2026-08-01)"
     assert linked(markdown) == conventional(walk(repo, "v1.0.0"))
 
 
 @pytest.fixture
-def build(repo, tmp_path, monkeypatch, pulls):
-    """The build command over the fixture repository, with the pull requests stubbed in."""
+def changes(repo, tmp_path, monkeypatch, pulls):
+    """The changes command over the fixture repository, with the pull requests stubbed in."""
 
     def run(*args):
         monkeypatch.setattr(notes, "pull_requests", lambda *_: pulls)
         out = tmp_path / "assets"
         result = CliRunner().invoke(
-            main, ["build", "--repo", str(repo), "--to", "v1.1.0", "--out", str(out), *args]
+            main, ["changes", "--repo", str(repo), "--to", "v1.1.0", "--out", str(out), *args]
         )
         assert result.exit_code == 0, result.output
         return {path.name for path in out.iterdir()}
@@ -171,8 +171,8 @@ def build(repo, tmp_path, monkeypatch, pulls):
     return run
 
 
-def test_a_build_writes_one_file_per_document_kind(build):
-    assert build() == {
+def test_a_run_writes_one_file_per_document_kind(changes):
+    assert changes() == {
         "test-1.1.0-changelog.md",
         "test-1.1.0-release-notes.md",
         "test-1.1.0-slides.md",
@@ -180,14 +180,16 @@ def test_a_build_writes_one_file_per_document_kind(build):
     }
 
 
-def test_a_range_without_user_facing_changes_writes_the_changelog_and_the_body(build, monkeypatch):
+def test_a_range_without_user_facing_changes_writes_the_changelog_and_the_body(
+    changes, monkeypatch
+):
     monkeypatch.setattr(notes, "changes", lambda _: [])
 
-    assert build() == {"test-1.1.0-changelog.md", "release-body.md"}
+    assert changes() == {"test-1.1.0-changelog.md", "release-body.md"}
 
 
-def test_the_product_and_release_options_name_the_files(build):
-    written = build("--product", "example-integration", "--release", "v2.0.0")
+def test_the_product_and_release_options_name_the_files(changes):
+    written = changes("--product", "example-integration", "--release", "v2.0.0")
 
     assert "example-integration-2.0.0-release-notes.md" in written
 
@@ -207,11 +209,11 @@ OPEN_PR = {
 
 @pytest.fixture
 def body(repo, monkeypatch, pulls):
-    """The body a build writes to stdout, with the merged pull requests stubbed in."""
+    """The body the changes command writes to stdout, with the pull requests stubbed in."""
 
     def run(*args):
         monkeypatch.setattr(notes, "pull_requests", lambda *_: pulls)
-        result = CliRunner().invoke(main, ["build", "--repo", str(repo), "--to", "v1.1.0", *args])
+        result = CliRunner().invoke(main, ["changes", "--repo", str(repo), "--to", "v1.1.0", *args])
         assert result.exit_code == 0, result.output
         return result.output
 

@@ -90,7 +90,7 @@ def test_a_line_break_someone_asked_for_survives():
 
 
 def test_fenced_code_is_left_as_written():
-    body = "Run it with:\n\n```sh\nreleasenote build --to v1.2.0\n--out dist\n```"
+    body = "Run it with:\n\n```sh\nreleasenote changes --to v1.2.0\n--out dist\n```"
     assert slides.unwrap(body) == body
 
 

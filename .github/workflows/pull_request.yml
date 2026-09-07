@@ -56,7 +56,7 @@ jobs:
             --volume "$PWD:/workspace" \
             --env GH_TOKEN \
             local/releasenote-tool-test \
-            build --to HEAD --pr "${PR}" --product releasenote-tool --release "${VERSION}" \
+            changes --to HEAD --pr "${PR}" --product releasenote-tool --release "${VERSION}" \
             --out release-notes --slides pdf --slides pptx
       - name: Put the release body on the run summary
         run: cat release-notes/release-body.md >>"$GITHUB_STEP_SUMMARY"
