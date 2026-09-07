@@ -19,12 +19,17 @@ Each entry links to its commit on the origin remote; override the base with `--u
 ```sh
 releasenote build --from v1.0.0 --to v1.1.0  # release body to stdout
 releasenote build --to v1.1.0 --out dist     # see Output files
+releasenote build --to HEAD --pr 12          # the range plus pull request 12, open or not
 ```
 
 The notes come from the `<!-- releasenote:start -->` block of every pull request merged in the
 range, one entry per `###` heading inside it; the rest of the body is ignored. If no pull request
 filled that block, you get the changelog alone. Needs `gh` on PATH and authenticated
 (`GH_TOKEN: ${{ github.token }}` in Actions).
+
+A pull request only reaches the range once it has merged, `--pr` reads one by number whatever
+its state and puts it at the top, which is how CI previews an open one against the release it is
+headed for. Passing a number the range already covers changes nothing.
 
 `feat` goes under Features, `fix` under Fixes, and `build`, `chore`, `ci`, `docs`, `perf`,
 `refactor`, `revert`, `style` and `test` under Other changes. A `!` or a `BREAKING CHANGE:` footer

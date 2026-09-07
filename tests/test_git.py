@@ -190,3 +190,46 @@ def test_the_product_and_release_options_name_the_files(build):
     written = build("--product", "example-integration", "--release", "v2.0.0")
 
     assert "example-integration-2.0.0-release-notes.md" in written
+
+
+OPEN_PR = {
+    "number": 200,
+    "title": "feat: call out a queenless hive",
+    "body": (
+        "<!-- releasenote:start -->\n"
+        "### Hives call for help\n"
+        "A queenless hive turns loud, and the app now says so.\n"
+        "<!-- releasenote:end -->\n"
+    ),
+    "url": f"{REPO}/pull/200",
+}
+
+
+@pytest.fixture
+def body(repo, monkeypatch, pulls):
+    """The body a build writes to stdout, with the merged pull requests stubbed in."""
+
+    def run(*args):
+        monkeypatch.setattr(notes, "pull_requests", lambda *_: pulls)
+        result = CliRunner().invoke(main, ["build", "--repo", str(repo), "--to", "v1.1.0", *args])
+        assert result.exit_code == 0, result.output
+        return result.output
+
+    return run
+
+
+def test_an_open_pull_request_joins_the_notes_ahead_of_the_merged_ones(body, monkeypatch):
+    monkeypatch.setattr(notes, "pull_request", lambda *_: OPEN_PR)
+
+    markdown = body("--pr", "200")
+
+    assert markdown.split("### ")[1].startswith("Hives call for help")
+
+
+def test_a_pull_request_already_in_the_range_is_not_listed_twice(body, monkeypatch, pulls):
+    merged = pulls[0]
+    monkeypatch.setattr(notes, "pull_request", lambda *_: merged)
+
+    markdown = body("--pr", str(merged["number"]))
+
+    assert markdown.count(f"[#{merged['number']}]") == len(notes.changes(merged))

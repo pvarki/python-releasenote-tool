@@ -107,6 +107,13 @@ def pull_requests(repo: str, since: str | None, until: str) -> list[dict[str, An
     )
 
 
+def pull_request(repo: str, number: int) -> dict[str, Any]:
+    """One pull request by number, merged or not. `repo` is owner/repo."""
+    return _gh(  # type: ignore[no-any-return]
+        "pr", "view", str(number), "--repo", repo, "--json", "number,title,body,url"
+    )
+
+
 def render(changes: list[Change], version: str, date: str) -> str:
     blocks = [change.markdown() for change in changes]
     return f"## {version} ({date})\n\n" + "\n\n".join(blocks) + "\n"

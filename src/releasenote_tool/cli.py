@@ -98,6 +98,9 @@ def changelog(
     multiple=True,
     help="Also render the deck in this format. Repeatable, needs --out.",
 )
+@click.option(
+    "--pr", type=int, help="Also read this pull request, merged or not. For previewing an open one."
+)
 def build(
     repo: str,
     start: str | None,
@@ -107,6 +110,7 @@ def build(
     out: pathlib.Path | None,
     url: str | None,
     formats: tuple[str, ...],
+    pr: int | None,
 ) -> None:
     """Release notes from the pull requests in a tag range, with the changelog below."""
     if formats and out is None:
@@ -118,7 +122,10 @@ def build(
     date = date_of(repo, end)
     commits = commits_in_range(repo, start, end)
     since = timestamp_of(repo, start) if start else None
-    pulls = notes.pull_requests(notes.slug(url), since, timestamp_of(repo, end))
+    slug = notes.slug(url)
+    pulls = notes.pull_requests(slug, since, timestamp_of(repo, end))
+    if pr is not None and not any(pull["number"] == pr for pull in pulls):
+        pulls = [notes.pull_request(slug, pr), *pulls]
     changes = [change for pull in pulls for change in notes.changes(pull)]
 
     label = release or end
