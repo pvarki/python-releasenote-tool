@@ -13,8 +13,14 @@ RULE_RE = re.compile(r" {0,3}(?:-{3,}|\*{3,}|_{3,})\s*")
 LIST_RE = re.compile(r"\s*(?:[-*+]|\d+[.)])\s")
 BLOCK_RE = re.compile(r"\s*(?:#{1,6}\s|>|\||```|!\[|<)")
 
+# An image, which markdown folds into the list item above it unless a blank line intervenes.
+IMAGE_RE = re.compile(r"\s*(?:!\[|<img\b)", re.IGNORECASE)
+
 # A change whose body runs longer than this is rendered by the theme at a smaller size.
 DENSE_LINES = 12
+
+# What an image costs roughly in lines.
+IMAGE_LINES = 8
 
 
 def rules(body: str) -> str:
@@ -63,6 +69,8 @@ def unwrap(body: str) -> str:
         if wraps:
             joined[-1] = f"{above.rstrip()} {line.strip()}"
         else:
+            if IMAGE_RE.match(line) and above.strip():
+                joined.append("")
             joined.append(line)
     return "\n".join(joined)
 
@@ -74,9 +82,14 @@ def directives(change: Change, dense: bool) -> str:
     return "<!--\n" + "\n".join(lines) + "\n-->"
 
 
+def height(body: str) -> int:
+    """Lines a body fills on a slide, an image counted as the space the theme gives it."""
+    return sum(IMAGE_LINES if IMAGE_RE.match(line) else 1 for line in body.split("\n"))
+
+
 def slide(change: Change) -> str:
     body = unwrap(rules(change.body))
-    dense = body.count("\n") + 1 > DENSE_LINES
+    dense = height(body) > DENSE_LINES
     heading = f"{directives(change, dense)}\n\n### {change.title}"
     return f"{heading}\n\n{body}" if body else heading
 
