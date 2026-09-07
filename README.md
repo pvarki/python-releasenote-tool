@@ -6,20 +6,20 @@ release notes from the pull requests in that range, for use in CI.
 ## Usage
 
 ```sh
-releasenote changelog --to v1.1.0                  # to stdout, --from defaults to the previous tag
-releasenote changelog --from v1.0.0 --to v1.1.0
-releasenote changelog --to v1.1.0 --out dist       # writes dist/<product>-1.1.0-changelog.md
-releasenote changelog --repo ../other-repo --to v1.1.0
+releasenote commits --to v1.1.0                    # to stdout, --from defaults to the previous tag
+releasenote commits --from v1.0.0 --to v1.1.0
+releasenote commits --to v1.1.0 --out dist         # writes dist/<product>-1.1.0-changelog.md
+releasenote commits --repo ../other-repo --to v1.1.0
 ```
 
 Each entry links to its commit on the origin remote; override the base with `--url`.
 
-`build` adds the user-facing release notes on top of that changelog:
+`changes` adds the user-facing release notes on top of that changelog:
 
 ```sh
-releasenote build --from v1.0.0 --to v1.1.0  # release body to stdout
-releasenote build --to v1.1.0 --out dist     # see Output files
-releasenote build --to HEAD --pr 12          # the range plus pull request 12, open or not
+releasenote changes --from v1.0.0 --to v1.1.0  # release body to stdout
+releasenote changes --to v1.1.0 --out dist     # see Output files
+releasenote changes --to HEAD --pr 12          # the range plus pull request 12, open or not
 ```
 
 The notes come from the `<!-- releasenote:start -->` block of every pull request merged in the
@@ -44,7 +44,7 @@ Every file leads with the product and the version, so an asset still says what i
 been downloaded or attached to a release:
 
 ```sh
-releasenote build --to v1.1.0 --out dist --product example-integration
+releasenote changes --to v1.1.0 --out dist --product example-integration
 ```
 
 ```
@@ -57,12 +57,12 @@ dist/
 
 `--product` defaults to the name of the origin repository, which is not always what the product is
 called. `--release` gives the version the documents claim when the ref does not carry one, which is
-what a preview built from `--to HEAD` wants. Both work on `changelog` too. A `/` in a ref is
+what a preview built from `--to HEAD` wants. Both work on `commits` too. A `/` in a ref is
 flattened, so `--to release/1.2` stays one filename.
 
 `release-body.md` keeps a fixed name on purpose: it is the file automation reads, so
 `gh release create --notes-file dist/release-body.md` needs no version in the path. It is also the
-only one a second build into the same directory overwrites rather than sits beside.
+only one a second run into the same directory overwrites rather than sits beside.
 
 ## Slides
 
@@ -71,11 +71,11 @@ slide per user-facing change, footed with the pull request it came from. `--slid
 flag per format, and needs `--out`:
 
 ```sh
-releasenote build --to v1.1.0 --out dist --slides pdf --slides pptx
+releasenote changes --to v1.1.0 --out dist --slides pdf --slides pptx
 releasenote slides dist/example-integration-1.1.0-slides.md --format pdf
 ```
 
-A render from `build` takes the release notes' name, `example-integration-1.1.0-release-notes.pdf`,
+A render from `changes` takes the release notes' name, `example-integration-1.1.0-release-notes.pdf`,
 because that is the document someone is handed. `releasenote slides` names its renders after the
 deck you give it instead, since it never sees a product or a version and needs no git or GitHub.
 
@@ -88,7 +88,7 @@ docker run --rm \
   --volume "$PWD:/workspace" \
   --env GH_TOKEN \
   ghcr.io/pvarki/releasenote-tool:1.0.0 \
-  build --to v1.1.0 --out dist --slides pdf --slides pptx
+  changes --to v1.1.0 --out dist --slides pdf --slides pptx
 ```
 
 ## Development

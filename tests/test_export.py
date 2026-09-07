@@ -66,6 +66,6 @@ def test_marp_failing_carries_its_own_error(monkeypatch):
 
 
 def test_slides_without_an_out_directory_is_refused():
-    result = CliRunner().invoke(main, ["build", "--to", "v1.0.0", "--slides", "pdf"])
+    result = CliRunner().invoke(main, ["changes", "--to", "v1.0.0", "--slides", "pdf"])
     assert result.exit_code != 0
     assert "--out" in result.output
