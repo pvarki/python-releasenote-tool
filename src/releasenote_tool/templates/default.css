@@ -38,6 +38,7 @@ section li {
 section img {
   display: block;
   max-height: 45vh;
+  max-width: 100%;
   margin: 24px auto 0;
 }
 
@@ -96,4 +97,8 @@ section.dense h3 {
 
 section.dense li {
   margin-bottom: 5px;
+}
+
+section.dense img {
+  max-height: 38vh;
 }

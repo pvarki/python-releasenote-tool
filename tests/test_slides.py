@@ -102,3 +102,18 @@ def test_a_long_change_is_marked_dense():
 def test_a_short_change_is_not():
     body = "Sea otters hold hands while they sleep so they do not drift apart."
     assert "_class: dense" not in slides.render([change(body)], VERSION, DATE, REPO)
+
+
+IMAGE = '<img alt="image" src="https://example.com/otters.png" />'
+
+
+def test_an_image_under_a_bullet_is_broken_out_of_the_list():
+    """Markdown folds a lazy continuation into the <li>, which nothing can then size."""
+    assert slides.unwrap(f"- holding hands\n{IMAGE}") == f"- holding hands\n\n{IMAGE}"
+
+
+def test_an_image_counts_as_the_space_the_theme_gives_it():
+    bullets = "\n".join(f"- sighting {number}" for number in range(6))
+
+    assert "_class: dense" in slides.render([change(f"{bullets}\n{IMAGE}")], VERSION, DATE, REPO)
+    assert "_class: dense" not in slides.render([change(bullets)], VERSION, DATE, REPO)
