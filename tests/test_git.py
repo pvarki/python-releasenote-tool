@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from conftest import REPO
 
 from releasenote_tool import notes
-from releasenote_tool.changelog import Commit, previous_tag
+from releasenote_tool.changelog import Commit, origin_url, previous_tag
 from releasenote_tool.cli import main
 
 TERN = (
@@ -43,6 +43,13 @@ RELEASED = 3
 TOPIC = ("fix(hives): call out a queenless hive", HIVE)
 MERGE = "chore: merge the queenless hives branch"
 LINK_RE = re.compile(rf"{re.escape(REPO)}/commit/([0-9a-f]+)\)")
+
+REMOTES = [
+    "git@example.com:example/test.git",
+    "ssh://git@example.com/example/test.git",
+    "ssh://git@example.com:2222/example/test.git",
+    "https://example.com/example/test.git",
+]
 
 ENV = {
     "GIT_CONFIG_GLOBAL": "/dev/null",
@@ -153,6 +160,14 @@ def test_the_first_release_takes_the_whole_history(repo, commits):
 
     assert markdown.splitlines()[0] == "## v1.0.0 (2026-08-01)"
     assert linked(markdown) == conventional(walk(repo, "v1.0.0"))
+
+
+@pytest.mark.parametrize("remote", REMOTES)
+def test_every_remote_form_reads_as_the_browsable_url(repo, remote):
+    git(repo, "remote", "set-url", "origin", remote)
+
+    assert origin_url(str(repo)) == REPO
+    assert notes.slug(REPO) == "example/test"
 
 
 @pytest.fixture

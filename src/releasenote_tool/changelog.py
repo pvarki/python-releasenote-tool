@@ -111,5 +111,6 @@ def origin_url(repo: str) -> str | None:
         url = _git(repo, "remote", "get-url", "origin").strip()
     except subprocess.CalledProcessError:
         return None
-    url = re.sub(r"^(?:ssh://)?git@([^:/]+)[:/]", r"https://\1/", url)
+    url = re.sub(r"^ssh://git@([^:/]+)(?::\d+)?/", r"https://\1/", url)
+    url = re.sub(r"^git@([^:/]+):", r"https://\1/", url)
     return url.removesuffix(".git") or None
