@@ -1,3 +1,5 @@
+import pytest
+
 from releasenote_tool.notes import changes, entries, slug, window
 
 ONE = """## Description
@@ -125,8 +127,16 @@ def test_an_unterminated_block_stops_at_the_next_section():
     assert "Anything Else" not in text
 
 
-def test_slug():
-    assert slug("https://example.com/example/test") == "example/test"
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://example.com/example/test", "example/test"),
+        ("https://example.com/example/test/", "example/test"),
+        ("https://github.com/pvarki/python-releasenote-tool", "pvarki/python-releasenote-tool"),
+    ],
+)
+def test_slug_keeps_the_owner(url, expected):
+    assert slug(url) == expected
 
 
 def test_the_window_starts_after_the_previous_tag():
