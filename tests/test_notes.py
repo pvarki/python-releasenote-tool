@@ -1,5 +1,9 @@
+import subprocess
+
+import click
 import pytest
 
+from releasenote_tool import notes
 from releasenote_tool.notes import changes, entries, slug, window
 
 ONE = """## Description
@@ -144,3 +148,21 @@ def test_the_window_starts_after_the_previous_tag():
         "2026-08-22T14:10:44+03:00..2026-08-22T15:23:49+03:00"
     )
     assert window(None, "2026-08-22T15:23:49+03:00") == "<=2026-08-22T15:23:49+03:00"
+
+
+def test_a_missing_gh_points_at_the_container_image(monkeypatch):
+    def absent(*_args, **_kwargs):
+        raise FileNotFoundError(2, "No such file or directory", "gh")
+
+    monkeypatch.setattr(notes.subprocess, "run", absent)
+    with pytest.raises(click.ClickException, match="container image"):
+        notes.pull_request("example/test", 1)
+
+
+def test_gh_failing_carries_its_own_error(monkeypatch):
+    def failed(*args, **_kwargs):
+        return subprocess.CompletedProcess(args, 1, "", "gh: Not Found (HTTP 404)\n")
+
+    monkeypatch.setattr(notes.subprocess, "run", failed)
+    with pytest.raises(click.ClickException, match="HTTP 404"):
+        notes.pull_request("example/test", 1)
