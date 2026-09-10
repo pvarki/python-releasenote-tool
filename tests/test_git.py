@@ -209,6 +209,8 @@ def test_the_product_and_release_options_name_the_files(changes):
     assert "example-integration-2.0.0-release-notes.md" in written
 
 
+TEST_SHA = "0" * 40
+
 OPEN_PR = {
     "number": 200,
     "title": "feat: call out a queenless hive",
@@ -219,6 +221,13 @@ OPEN_PR = {
         "<!-- releasenote:end -->\n"
     ),
     "url": f"{REPO}/pull/200",
+    "commits": [
+        {
+            "oid": TEST_SHA,
+            "messageHeadline": "feat(hives): call out a queenless hive",
+            "messageBody": "",
+        }
+    ],
 }
 
 
@@ -250,3 +259,23 @@ def test_a_pull_request_already_in_the_range_is_not_listed_twice(body, monkeypat
     markdown = body("--pr", str(merged["number"]))
 
     assert markdown.count(f"[#{merged['number']}]") == len(notes.changes(merged))
+
+
+def test_an_open_pull_requests_commits_reach_the_changelog(body, monkeypatch):
+    monkeypatch.setattr(notes, "pull_request", lambda *_: OPEN_PR)
+
+    assert TEST_SHA in linked(body("--pr", "200"))
+
+
+def test_a_commit_the_range_already_covers_is_not_listed_twice(repo, body, monkeypatch):
+    """The CI case: on a pull_request event HEAD is the merge commit, so the range has them."""
+    sha = git(repo, "log", "-1", "--format=%H", "v1.1.0^2").strip()
+    preview = {
+        **OPEN_PR,
+        "number": 201,
+        "url": f"{REPO}/pull/201",
+        "commits": [{"oid": sha, "messageHeadline": TOPIC[0], "messageBody": TOPIC[1]}],
+    }
+    monkeypatch.setattr(notes, "pull_request", lambda *_: preview)
+
+    assert body("--pr", "201").count(f"/commit/{sha}") == 1
