@@ -48,7 +48,10 @@ REMOTES = [
     "git@example.com:example/test.git",
     "ssh://git@example.com/example/test.git",
     "ssh://git@example.com:2222/example/test.git",
+    "ssh://example.com/example/test.git",
+    "git://example.com/example/test.git",
     "https://example.com/example/test.git",
+    "https://user@example.com/example/test.git",
 ]
 
 ENV = {
@@ -160,6 +163,34 @@ def test_the_first_release_takes_the_whole_history(repo, commits):
 
     assert markdown.splitlines()[0] == "## v1.0.0 (2026-08-01)"
     assert linked(markdown) == conventional(walk(repo, "v1.0.0"))
+
+
+@pytest.mark.parametrize("command", ["commits", "changes"])
+def test_a_repo_that_is_not_a_clone_says_so(tmp_path, command):
+    result = CliRunner().invoke(main, [command, "--repo", str(tmp_path), "--to", "HEAD"])
+
+    assert result.exit_code != 0
+    assert "is not a git clone" in result.output
+
+
+def test_a_clone_without_an_origin_can_still_build_a_changelog(repo, tmp_path):
+    git(repo, "remote", "remove", "origin")
+    out = tmp_path / "out"
+    result = CliRunner().invoke(
+        main, ["commits", "--repo", str(repo), "--to", "v1.1.0", "--out", str(out)]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "](http" not in (out / "repo-1.1.0-changelog.md").read_text()
+
+
+def test_a_clone_without_an_origin_cannot_read_pull_requests(repo):
+    git(repo, "remote", "remove", "origin")
+
+    result = CliRunner().invoke(main, ["changes", "--repo", str(repo), "--to", "v1.1.0"])
+
+    assert result.exit_code != 0
+    assert "no origin remote" in result.output
 
 
 @pytest.mark.parametrize("remote", REMOTES)

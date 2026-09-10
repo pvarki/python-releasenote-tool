@@ -3,6 +3,10 @@
 Generates a technical changelog from the conventional commits in a git tag range, and user-facing
 release notes from the pull requests in that range, for use in CI.
 
+You need a local clone of the repository, and `--repo` is the path to it, default `.`. Nothing is
+cloned or fetched for you, so the range has to be there already: full history and tags, which in
+Actions means `fetch-depth: 0`.
+
 ## Usage
 
 ```sh
@@ -12,7 +16,7 @@ releasenote commits --to v1.1.0 --out dist         # writes dist/<product>-1.1.0
 releasenote commits --repo ../other-repo --to v1.1.0
 ```
 
-Each entry links to its commit on the origin remote; override the base with `--url`.
+Each entry links to its commit on the origin remote of that clone.
 
 `changes` adds the user-facing release notes on top of that changelog:
 
@@ -21,6 +25,8 @@ releasenote changes --from v1.0.0 --to v1.1.0  # release body to stdout
 releasenote changes --to v1.1.0 --out dist     # see Output files
 releasenote changes --to HEAD --pr 12          # the range plus pull request 12, open or not
 ```
+
+`commits` is pure git. `changes` uses git and `gh`.
 
 The notes come from the `<!-- releasenote:start -->` block of every pull request merged in the
 range, one entry per `###` heading inside it; the rest of the body is ignored. If no pull request
