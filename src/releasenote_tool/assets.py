@@ -6,6 +6,7 @@ import re
 from .notes import slug
 
 BODY = "release-body.md"
+NOTES = "release-notes"
 
 UNSAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 LEADING_V_RE = re.compile(r"^v(?=\d)")
@@ -34,7 +35,7 @@ def names(stem: str) -> dict[str, str]:
     """Filename per document kind. The release body keeps a fixed name for automation to read."""
     return {
         "changelog": f"{stem}-changelog.md",
-        "release-notes": f"{stem}-release-notes.md",
+        "release-notes": f"{stem}-{NOTES}.md",
         "release-body": BODY,
         "slides": f"{stem}-slides.md",
     }
@@ -42,4 +43,4 @@ def names(stem: str) -> dict[str, str]:
 
 def rendered(stem: str, fmt: str) -> str:
     """A deck's renders take the prose notes' name, not the deck's own."""
-    return f"{names(stem)['release-notes'].removesuffix('.md')}.{fmt}"
+    return f"{stem}-{NOTES}.{fmt}"
