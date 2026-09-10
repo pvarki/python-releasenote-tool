@@ -37,7 +37,7 @@ class Commit:
     sha: str
 
     @classmethod
-    def parse(cls, sha: str, subject: str, body: str) -> "Commit | None":
+    def parse(cls, sha: str, subject: str, body: str) -> Commit | None:
         """None for anything not worth publishing: a non-conventional commit, a typo'd type, a bump."""
         match = SUBJECT_RE.match(subject)
         if not match:
