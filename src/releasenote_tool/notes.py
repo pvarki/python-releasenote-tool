@@ -9,6 +9,8 @@ from typing import Any
 
 import click
 
+from .changelog import Commit
+
 # The user-facing section of the pull request template, one ### per change:
 #
 #     <!-- releasenote:start -->
@@ -70,6 +72,20 @@ def changes(pull_request: dict[str, Any]) -> list[Change]:
     return [Change(title, body, number, url) for title, body in entries(pull_request["body"] or "")]
 
 
+def commits(pull_request: dict[str, Any]) -> list[Commit]:
+    """The conventional commits a pull request carries, newest first like `git log`.
+
+    Only needed for a pull request the range does not already contain, which is why
+    `pull_requests` does not ask for them.
+    """
+    entries = reversed(pull_request.get("commits", []))
+    parsed = (
+        Commit.parse(entry["oid"], entry["messageHeadline"], entry["messageBody"])
+        for entry in entries
+    )
+    return [commit for commit in parsed if commit]
+
+
 def slug(url: str) -> str:
     """owner/repo out of a repository URL."""
     return url.rstrip("/").split("/", 3)[-1]
@@ -110,7 +126,7 @@ def pull_requests(repo: str, since: str | None, until: str) -> list[dict[str, An
 def pull_request(repo: str, number: int) -> dict[str, Any]:
     """One pull request by number, merged or not. `repo` is owner/repo."""
     return _gh(  # type: ignore[no-any-return]
-        "pr", "view", str(number), "--repo", repo, "--json", "number,title,body,url"
+        "pr", "view", str(number), "--repo", repo, "--json", "number,title,body,url,commits"
     )
 
 

@@ -125,7 +125,10 @@ def changes_command(
     slug = notes.slug(url)
     pulls = notes.pull_requests(slug, since, timestamp_of(repo, end))
     if pr is not None and not any(pull["number"] == pr for pull in pulls):
-        pulls = [notes.pull_request(slug, pr), *pulls]
+        preview = notes.pull_request(slug, pr)
+        pulls = [preview, *pulls]
+        seen = {commit.sha for commit in commits}
+        commits = [*(c for c in notes.commits(preview) if c.sha not in seen), *commits]
     changes = [change for pull in pulls for change in notes.changes(pull)]
 
     label = release or end
