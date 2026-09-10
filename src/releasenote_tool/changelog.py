@@ -4,6 +4,8 @@ import re
 import subprocess  # nosec B404
 from dataclasses import dataclass
 
+import click
+
 SUBJECT_RE = re.compile(
     r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?: (?P<summary>.+)$",
     re.IGNORECASE,
@@ -58,10 +60,16 @@ class Commit:
         return f"- {scope}{self.summary} ({commit})"
 
 
+MISSING = "git is not on PATH. Install git, or run this from the tool's container image."
+
+
 def _git(repo: str, *args: str) -> str:
-    return subprocess.run(  # nosec
-        ["git", "-C", repo, *args], capture_output=True, text=True, check=True
-    ).stdout
+    try:
+        return subprocess.run(  # nosec
+            ["git", "-C", repo, *args], capture_output=True, text=True, check=True
+        ).stdout
+    except FileNotFoundError as absent:
+        raise click.ClickException(MISSING) from absent
 
 
 def commits_in_range(repo: str, start: str | None, end: str) -> list[Commit]:

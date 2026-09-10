@@ -91,8 +91,14 @@ def slug(url: str) -> str:
     return url.rstrip("/").split("/", 3)[-1]
 
 
+MISSING = "gh is not on PATH. Install the GitHub CLI, or run this from the tool's container image."
+
+
 def _gh(*args: str) -> Any:
-    result = subprocess.run(["gh", *args], capture_output=True, text=True, check=False)  # nosec
+    try:
+        result = subprocess.run(["gh", *args], capture_output=True, text=True, check=False)  # nosec
+    except FileNotFoundError as absent:
+        raise click.ClickException(MISSING) from absent
     if result.returncode:
         raise click.ClickException(f"gh {' '.join(args)} failed: {result.stderr.strip()}")
     return json.loads(result.stdout)

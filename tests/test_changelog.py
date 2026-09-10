@@ -1,5 +1,7 @@
+import click
 import pytest
 
+from releasenote_tool import changelog
 from releasenote_tool.changelog import SECTIONS, TYPES, Commit, render
 
 LOG = [
@@ -142,3 +144,12 @@ def test_a_dropped_commit_leaves_nothing_behind():
     assert "tokens now expire" not in md
     assert "### Breaking changes" not in md
     assert md.count("\n- ") == 1
+
+
+def test_a_missing_git_points_at_the_container_image(monkeypatch):
+    def absent(*_args, **_kwargs):
+        raise FileNotFoundError(2, "No such file or directory", "git")
+
+    monkeypatch.setattr(changelog.subprocess, "run", absent)
+    with pytest.raises(click.ClickException, match="container image"):
+        changelog.date_of(".", "HEAD")
