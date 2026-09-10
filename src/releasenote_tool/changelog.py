@@ -72,6 +72,17 @@ def _git(repo: str, *args: str) -> str:
         raise click.ClickException(MISSING) from absent
 
 
+def require_clone(repo: str) -> None:
+    """Fail before the first read when --repo is not a checkout."""
+    try:
+        _git(repo, "rev-parse", "--git-dir")
+    except subprocess.CalledProcessError as outside:
+        raise click.ClickException(
+            f"{repo} is not a git clone. --repo takes the path to a local checkout of the "
+            "repository whose commits you want; it must already exist."
+        ) from outside
+
+
 def commits_in_range(repo: str, start: str | None, end: str) -> list[Commit]:
     log = _git(
         repo,
@@ -119,6 +130,7 @@ def origin_url(repo: str) -> str | None:
         url = _git(repo, "remote", "get-url", "origin").strip()
     except subprocess.CalledProcessError:
         return None
-    url = re.sub(r"^ssh://git@([^:/]+)(?::\d+)?/", r"https://\1/", url)
+    url = re.sub(r"^(?:ssh|git)://(?:[^@/]+@)?([^:/]+)(?::\d+)?/", r"https://\1/", url)
     url = re.sub(r"^git@([^:/]+):", r"https://\1/", url)
+    url = re.sub(r"^(https?://)[^@/]+@", r"\1", url)
     return url.removesuffix(".git") or None

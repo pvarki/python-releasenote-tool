@@ -12,12 +12,13 @@ from .changelog import (
     origin_url,
     previous_tag,
     render,
+    require_clone,
     sections,
     timestamp_of,
 )
 
 RANGE_OPTIONS = [
-    click.option("--repo", default=".", help="Repository to read commits from."),
+    click.option("--repo", default=".", help="Path to the local clone to read commits from."),
     click.option(
         "--from", "start", help="Start of the range, exclusive. Defaults to the previous tag."
     ),
@@ -27,7 +28,6 @@ RANGE_OPTIONS = [
     ),
     click.option("--release", help="Version the documents claim. Defaults to --to."),
     click.option("--out", type=click.Path(path_type=pathlib.Path), help="Directory to write into."),
-    click.option("--url", help="Repository URL to link to. Defaults to the origin remote."),
 ]
 
 
@@ -74,10 +74,10 @@ def commits_command(
     product: str | None,
     release: str | None,
     out: pathlib.Path | None,
-    url: str | None,
 ) -> None:
     """Technical changelog from the conventional commits in a tag range."""
-    url = url or origin_url(repo)
+    require_clone(repo)
+    url = origin_url(repo)
     label = release or end
     commits = commits_in_range(repo, start or previous_tag(repo, end), end)
     markdown = render(commits, label, date_of(repo, end), url)
@@ -108,17 +108,19 @@ def changes_command(
     product: str | None,
     release: str | None,
     out: pathlib.Path | None,
-    url: str | None,
     formats: tuple[str, ...],
     pr: int | None,
 ) -> None:
     """Release notes from the pull requests in a tag range, with the changelog below."""
     if formats and out is None:
         raise click.ClickException("--slides has nowhere to write, pass --out.")
+    require_clone(repo)
     start = start or previous_tag(repo, end)
-    url = url or origin_url(repo)
+    url = origin_url(repo)
     if not url:
-        raise click.ClickException("No origin remote to read pull requests from, pass --url.")
+        raise click.ClickException(
+            f"{repo} has no origin remote, so there is no repository to read pull requests from."
+        )
     date = date_of(repo, end)
     commits = commits_in_range(repo, start, end)
     since = timestamp_of(repo, start) if start else None
