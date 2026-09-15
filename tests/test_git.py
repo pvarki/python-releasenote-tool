@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from conftest import REPO
 
 from releasenote_tool import notes
-from releasenote_tool.changelog import Commit, origin_url, previous_tag
+from releasenote_tool.changelog import Commit, origin_url, previous_tag, shas_in_range
 from releasenote_tool.cli import main
 
 TERN = (
@@ -163,6 +163,23 @@ def test_the_first_release_takes_the_whole_history(repo, commits):
 
     assert markdown.splitlines()[0] == "## v1.0.0 (2026-08-01)"
     assert linked(markdown) == conventional(walk(repo, "v1.0.0"))
+
+
+def test_the_sha_walk_keeps_the_merge_the_changelog_drops(repo):
+    shas = shas_in_range(str(repo), "v1.0.0", "v1.1.0")
+    merge = git(repo, "rev-parse", "v1.1.0").strip()
+    walked = {sha for sha, _ in walk(repo, "v1.0.0..v1.1.0")}
+
+    assert shas[0] == merge
+    assert merge not in walked
+    assert walked < set(shas)
+    assert git(repo, "rev-parse", "v1.0.0").strip() not in shas
+
+
+def test_the_sha_walk_of_a_first_release_takes_the_whole_history(repo):
+    shas = shas_in_range(str(repo), None, "v1.0.0")
+
+    assert len(shas) == RELEASED
 
 
 @pytest.mark.parametrize("command", ["commits", "changes"])
