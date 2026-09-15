@@ -3,8 +3,8 @@
 import json
 import re
 import subprocess  # nosec B404
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 from typing import Any
 
 import click
@@ -104,29 +104,52 @@ def _gh(*args: str) -> Any:
     return json.loads(result.stdout)
 
 
-def window(since: str | None, until: str) -> str:
-    """GitHub search window for a tag range, with the start tag's own merge left out."""
-    if not since:
-        return f"<={until}"
-    return f"{(datetime.fromisoformat(since) + timedelta(seconds=1)).isoformat()}..{until}"
+# Commits per GraphQL query
+BATCH = 100
+FIELDS = ("number", "title", "body", "url")
+ASSOCIATED = (
+    "associatedPullRequests(first: 5) "
+    "{ nodes { number title body url mergedAt repository { nameWithOwner } } }"
+)
 
 
-def pull_requests(repo: str, since: str | None, until: str) -> list[dict[str, Any]]:
-    """Merged pull requests in the range's time window, newest first. `repo` is owner/repo."""
-    return _gh(  # type: ignore[no-any-return]
-        "pr",
-        "list",
-        "--repo",
-        repo,
-        "--state",
-        "merged",
-        "--limit",
-        "200",
-        "--search",
-        f"merged:{window(since, until)}",
-        "--json",
-        "number,title,body,url",
+def _query(shas: Sequence[str]) -> str:
+    """One query asking which pull requests each sha belongs to."""
+    lookups = " ".join(
+        f'c{index}: object(oid: "{sha}") {{ ... on Commit {{ {ASSOCIATED} }} }}'
+        for index, sha in enumerate(shas)
     )
+    return (
+        "query($owner: String!, $name: String!) "
+        f"{{ repository(owner: $owner, name: $name) {{ {lookups} }} }}"
+    )
+
+
+def _associated(repo: str, shas: Sequence[str]) -> Iterator[dict[str, Any]]:
+    owner, name = repo.split("/", 1)
+    found = _gh(
+        "api",
+        "graphql",
+        "-f",
+        f"query={_query(shas)}",
+        "-F",
+        f"owner={owner}",
+        "-F",
+        f"name={name}",
+    )
+    for commit in found["data"]["repository"].values():
+        if commit:  # A sha GitHub does not know comes back null.
+            yield from commit["associatedPullRequests"]["nodes"]
+
+
+def pull_requests(repo: str, shas: Sequence[str]) -> list[dict[str, Any]]:
+    """Merged pull requests the range's commits belong to, newest first. `repo` is owner/repo."""
+    found: dict[int, dict[str, Any]] = {}
+    for batch in range(0, len(shas), BATCH):
+        for pull in _associated(repo, shas[batch : batch + BATCH]):
+            if pull["mergedAt"] and pull["repository"]["nameWithOwner"] == repo:
+                found.setdefault(pull["number"], {field: pull[field] for field in FIELDS})
+    return list(found.values())
 
 
 def pull_request(repo: str, number: int) -> dict[str, Any]:

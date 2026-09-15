@@ -14,7 +14,7 @@ from .changelog import (
     render,
     require_clone,
     sections,
-    timestamp_of,
+    shas_in_range,
 )
 
 RANGE_OPTIONS = [
@@ -123,9 +123,8 @@ def changes_command(
         )
     date = date_of(repo, end)
     commits = commits_in_range(repo, start, end)
-    since = timestamp_of(repo, start) if start else None
     slug = notes.slug(url)
-    pulls = notes.pull_requests(slug, since, timestamp_of(repo, end))
+    pulls = notes.pull_requests(slug, shas_in_range(repo, start, end))
     if pr is not None and not any(pull["number"] == pr for pull in pulls):
         preview = notes.pull_request(slug, pr)
         pulls = [preview, *pulls]
