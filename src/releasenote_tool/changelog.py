@@ -125,10 +125,6 @@ def date_of(repo: str, to: str) -> str:
     return _git(repo, "log", "-1", "--format=%cs", to).strip()
 
 
-def timestamp_of(repo: str, to: str) -> str:
-    return _git(repo, "log", "-1", "--format=%cI", to).strip()
-
-
 def origin_url(repo: str) -> str | None:
     """Browsable URL of the origin remote, for linking commits."""
     try:

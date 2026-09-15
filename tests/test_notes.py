@@ -1,10 +1,11 @@
+import re
 import subprocess
 
 import click
 import pytest
 
 from releasenote_tool import notes
-from releasenote_tool.notes import changes, entries, slug, window
+from releasenote_tool.notes import BATCH, changes, entries, pull_requests, slug
 
 ONE = """## Description
 The pouch logic moved to `marsupial.py`, reviewers should start there.
@@ -143,11 +144,92 @@ def test_slug_keeps_the_owner(url, expected):
     assert slug(url) == expected
 
 
-def test_the_window_starts_after_the_previous_tag():
-    assert window("2026-08-22T14:10:43+03:00", "2026-08-22T15:23:49+03:00") == (
-        "2026-08-22T14:10:44+03:00..2026-08-22T15:23:49+03:00"
-    )
-    assert window(None, "2026-08-22T15:23:49+03:00") == "<=2026-08-22T15:23:49+03:00"
+SLUG = "example/test"
+OID_RE = re.compile(r'object\(oid: "([0-9a-f]{40})"\)')
+
+
+def associated(number, repo=SLUG, merged_at="2026-08-22T15:23:49Z"):
+    """One pull request as the association query returns it."""
+    return {
+        **pull_request(ONE, number),
+        "mergedAt": merged_at,
+        "repository": {"nameWithOwner": repo},
+    }
+
+
+def sha(index):
+    return f"{index:040x}"
+
+
+@pytest.fixture
+def graphql(monkeypatch):
+    """Stub gh, answering each batched query from a sha to pull requests mapping."""
+
+    def answer(by_sha):
+        asked = []
+
+        def run(*args):
+            query = next(arg for arg in args if arg.startswith("query="))
+            shas = OID_RE.findall(query)
+            asked.append(shas)
+            return {
+                "data": {
+                    "repository": {
+                        f"c{index}": (
+                            {"associatedPullRequests": {"nodes": by_sha[found]}}
+                            if found in by_sha
+                            else None
+                        )
+                        for index, found in enumerate(shas)
+                    }
+                }
+            }
+
+        monkeypatch.setattr(notes, "_gh", run)
+        return asked
+
+    return answer
+
+
+def test_a_pull_request_several_commits_belong_to_is_listed_once(graphql):
+    graphql({sha(1): [associated(7)], sha(2): [associated(7)], sha(3): [associated(8)]})
+
+    listed = pull_requests(SLUG, [sha(1), sha(2), sha(3)])
+
+    assert [pull["number"] for pull in listed] == [7, 8]
+    assert set(listed[0]) == {"number", "title", "body", "url"}
+
+
+def test_a_pull_request_still_open_is_not_a_release_note(graphql):
+    graphql({sha(1): [associated(7, merged_at=None)]})
+
+    assert pull_requests(SLUG, [sha(1)]) == []
+
+
+def test_a_pull_request_from_another_repository_stays_there(graphql):
+    graphql({sha(1): [associated(7, repo="example/fork")]})
+
+    assert pull_requests(SLUG, [sha(1)]) == []
+
+
+def test_a_sha_github_does_not_know_is_skipped(graphql):
+    graphql({sha(2): [associated(7)]})
+
+    assert [pull["number"] for pull in pull_requests(SLUG, [sha(1), sha(2)])] == [7]
+
+
+def test_a_long_range_is_asked_in_batches(graphql):
+    asked = graphql({})
+
+    assert pull_requests(SLUG, [sha(index) for index in range(BATCH + 1)]) == []
+    assert [len(batch) for batch in asked] == [BATCH, 1]
+
+
+def test_a_range_with_no_commits_asks_github_nothing(graphql):
+    asked = graphql({})
+
+    assert pull_requests(SLUG, []) == []
+    assert asked == []
 
 
 def test_a_missing_gh_points_at_the_container_image(monkeypatch):
