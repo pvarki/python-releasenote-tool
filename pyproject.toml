@@ -1,6 +1,6 @@
 [project]
 name = "releasenote-tool"
-version = "1.0.0"
+version = "1.0.1"
 description = "Generate changelogs / release notes from a git tag range"
 requires-python = ">=3.14"
 dependencies = ["click>=8.1"]
