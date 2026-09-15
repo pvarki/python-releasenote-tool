@@ -96,6 +96,11 @@ def commits_in_range(repo: str, start: str | None, end: str) -> list[Commit]:
     return [commit for commit in parsed if commit]
 
 
+def shas_in_range(repo: str, start: str | None, end: str) -> list[str]:
+    """Every commit in the range, newest first. Merges stay, a pull request can hang off one."""
+    return _git(repo, "log", "--format=%H", f"{start}..{end}" if start else end).split()
+
+
 def sections(commits: list[Commit], url: str | None = None) -> str:
     blocks = []
     for section, heading in SECTIONS.items():
